@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Chess</h1>
+      <div id="header-actions">
+        <button id="btn-fullscreen" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
+      </div>
+    </header>
+
+    <div id="main">
+
+      <!-- Left Panel: Player Names -->
+      <div id="left-panel">
+        <div class="left-panel-title">Players</div>
+        <div class="name-field">
+          <label for="name-white">⬜ White Player</label>
+          <input id="name-white" class="player-name-input" type="text" value="White" placeholder="Enter name" oninput="syncPlayerNames()">
+          <span id="material-adv-white" class="material-adv-left"></span>
+        </div>
+        <div class="name-field">
+          <label for="name-black">⬛ Black Player</label>
+          <input id="name-black" class="player-name-input" type="text" value="Black" placeholder="Enter name" oninput="syncPlayerNames()">
+          <span id="material-adv-black" class="material-adv-left"></span>
+        </div>
+      </div>
+
+      <!-- Board Area -->
+      <div id="board-area">
+
+        <div id="captured-by-white" class="captured-bar"></div>
+
+        <div id="status-wrap">
+          <div id="status-bar" class="status-bar"></div>
+          <div id="opening-label" class="opening-label"></div>
+        </div>
+
+        <!-- Board row: labels + board + material bar -->
+        <div id="board-main-row">
+          <div id="board-perspective">
+            <div id="board-wrap">
+              <div id="rank-labels-left" class="rank-labels"></div>
+              <div id="board"></div>
+              <div id="rank-labels-right" class="rank-labels"></div>
+            </div>
+          </div>
+
+          <!-- Material Advantage Bar -->
+          <div id="material-bar-wrap">
+            <div id="material-bar">
+              <div id="mat-black-fill"></div>
+              <div id="mat-white-fill"></div>
+            </div>
+            <div id="material-score-black" class="mat-score"></div>
+            <div id="material-score-white" class="mat-score"></div>
+          </div>
+        </div>
+
+        <div id="file-labels" class="file-labels"></div>
+        <div id="captured-by-black" class="captured-bar"></div>
+
+      </div><!-- end board-area -->
+
+      <!-- Sidebar -->
+      <div id="sidebar">
+        <div id="clock-black" class="clock black-clock">
+          <span class="clock-label" id="clock-label-black">Black</span>
+          <span id="time-black" class="clock-time">5:00</span>
+        </div>
+
+        <div id="history-panel">
+          <div id="history-header">Move History</div>
+          <div id="history-list"></div>
+        </div>
+
+        <div id="clock-white" class="clock white-clock active-clock">
+          <span class="clock-label" id="clock-label-white">White</span>
+          <span id="time-white" class="clock-time">5:00</span>
+        </div>
+      </div>
+    </div><!-- end main -->
+
+    <!-- Controls -->
+    <div id="controls">
+      <button id="btn-reset" onclick="resetGame()">&#8635; New Game</button>
+      <button id="btn-undo" onclick="undoMove()">&#8592; Undo</button>
+      <button id="btn-redo" onclick="redoMove()">&#8594; Redo</button>
+      <button id="btn-flip" onclick="flipBoard()" title="Flip board">⇅ Flip</button>
+      <button id="btn-3d" onclick="toggle3D()">⬛ 3D View</button>
+      <button id="btn-puzzle" onclick="togglePuzzlePanel()">🧩 Puzzle</button>
+      <label for="clock-input">Clock (min):</label>
+      <input id="clock-input" type="number" value="5" min="1" max="60" style="width:50px">
+      <button onclick="applyClockSetting()">Apply</button>
+      <label for="theme-select">Theme:</label>
+      <select id="theme-select" onchange="applyTheme(this.value)">
+        <option value="classic">Classic</option>
+        <option value="metro">Metro</option>
+        <option value="leipzig">Leipzig</option>
+        <option value="wikipedia">Wikipedia</option>
+        <option value="uscf">USCF</option>
+        <option value="dilena">Dilena</option>
+        <option value="green">Green</option>
+        <option value="walnut">Walnut</option>
+      </select>
+    </div>
+
+    <!-- Puzzle Panel -->
+    <div id="puzzle-panel" class="hidden">
+      <div id="puzzle-inner">
+        <div id="puzzle-header">
+          <h3>🧩 Puzzle Mode</h3>
+          <button class="puzzle-close" onclick="togglePuzzlePanel()">✕</button>
+        </div>
+        <div id="puzzle-body">
+          <div class="puzzle-row">
+            <label>Preset puzzles:</label>
+            <select id="puzzle-select" onchange="loadPresetPuzzle(this.value)">
+              <option value="">-- Select a puzzle --</option>
+              <option value="mate1">Mate in 1 — Rook</option>
+              <option value="mate1b">Mate in 1 — Queen</option>
+              <option value="fork">Knight Fork</option>
+              <option value="pin">Pin & Win</option>
+              <option value="skewer">Skewer Tactic</option>
+              <option value="backrank">Back Rank Mate</option>
+            </select>
+          </div>
+          <div class="puzzle-row">
+            <label>Or paste FEN:</label>
+            <input id="puzzle-fen" type="text" placeholder="e.g. rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1">
+            <button onclick="loadFENFromInput()">Load</button>
+          </div>
+          <div id="puzzle-hint-box"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- end app -->
+
+  <!-- Promotion Modal -->
+  <div id="promotion-modal" class="modal hidden">
+    <div class="modal-content">
+      <h3>Promote Pawn</h3>
+      <div id="promotion-choices"></div>
+    </div>
+  </div>
+
+  <script src="chess.js"></script>
+</body>
+</html>

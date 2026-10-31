@@ -1,0 +1,583 @@
+/* ── Reset & base ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:        #0f1117;
+  --surface:   #1a1d27;
+  --border:    #2a2d3a;
+  --accent:    #f5c518;
+  --accent2:   #3b82f6;
+  --danger:    #ef4444;
+  --green:     #22c55e;
+  --text:      #e8eaf0;
+  --muted:     #6b7280;
+  --sq-light:  #ede8d0;
+  --sq-dark:   #8b6242;
+  --sq-sel:    #f59e0b;
+  --sq-hl:     #84cc16;
+  --sq-final:  #ef4444;
+  --font-body: 'Georgia', serif;
+  --font-mono: 'Courier New', monospace;
+}
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+/* ── Page layout ──────────────────────────────────────────────────────────── */
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 0 0 2rem;
+}
+
+/* ── Top bar ──────────────────────────────────────────────────────────────── */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.topbar-title h1 {
+  font-size: 1.5rem;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+}
+
+.topbar-title p {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────────────── */
+.btn {
+  cursor: pointer;
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-family: var(--font-body);
+  border: 1px solid var(--border);
+  transition: background 0.15s, color 0.15s, opacity 0.15s;
+}
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.btn-active {
+  background: var(--accent);
+  color: #111;
+  border-color: var(--accent);
+  font-weight: bold;
+}
+.btn-active:hover:not(:disabled) { background: #e0b010; }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--border);
+}
+
+/* ── Layout ───────────────────────────────────────────────────────────────── */
+.layout {
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-start;
+  padding: 1.25rem 1.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ── Board panel ──────────────────────────────────────────────────────────── */
+.board-panel {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Status bar — fixed two-row layout so board never shifts */
+.status-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.status-bar-row1 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.status-chip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.2rem 0.7rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.status-chip strong { color: var(--text); }
+
+/* Message sits on its own row — fixed min-height so board never jumps */
+.status-msg {
+  font-size: 0.82rem;
+  color: var(--muted);
+  min-height: 1.2rem;
+  line-height: 1.4;
+  padding: 0.1rem 0.2rem;
+}
+.status-msg.won {
+  color: var(--green);
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+
+/* ── Board grid ───────────────────────────────────────────────────────────── */
+.board-wrap {
+  border: 3px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  display: inline-block;
+}
+
+.board-grid {
+  display: grid;
+  /* col 0 = rank labels, cols 1-8 = squares */
+  grid-template-columns: 1.4rem repeat(8, 4.5rem);
+  /* row 0 = file labels, rows 1-8 = ranks */
+  grid-template-rows: 1.4rem repeat(8, 4.5rem);
+  background: var(--bg);
+}
+
+.corner { background: var(--bg); }
+
+.file-label,
+.rank-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  background: var(--bg);
+  user-select: none;
+}
+
+/* ── Individual square ────────────────────────────────────────────────────── */
+.sq {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: filter 0.1s;
+  padding: 0;
+  gap: 2px;
+}
+
+.sq.light { background: var(--sq-light); }
+.sq.dark  { background: var(--sq-dark);  }
+
+.sq:hover  { filter: brightness(1.1); }
+
+/* Selected piece square */
+.sq.sel    { outline: 3px solid var(--sq-sel); outline-offset: -3px; }
+
+/* Legal move highlight — green dot overlay */
+.sq.hl::after {
+  content: "";
+  position: absolute;
+  width: 32%;
+  height: 32%;
+  background: var(--sq-hl);
+  border-radius: 50%;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* Legal move that has a capturable piece — ring instead of dot */
+.sq.hl .glyph ~ .sq.hl::after { display: none; }
+
+/* When a piece occupies a highlighted square, show a ring */
+.sq.hl:has(.glyph)::after {
+  width: 88%;
+  height: 88%;
+  background: transparent;
+  border: 3px solid var(--sq-hl);
+  opacity: 0.9;
+}
+
+/* Final-target (king capture) square */
+.sq.final { outline: 3px solid var(--sq-final); outline-offset: -3px; }
+.sq.final::after {
+  background: var(--sq-final) !important;
+}
+
+/* Square coordinate label */
+.sq-name {
+  position: absolute;
+  bottom: 2px;
+  left: 3px;
+  font-size: 0.55rem;
+  color: rgba(0,0,0,0.3);
+  font-family: var(--font-mono);
+  user-select: none;
+  pointer-events: none;
+}
+.sq.dark .sq-name { color: rgba(255,255,255,0.25); }
+
+/* Piece glyph */
+.glyph {
+  font-size: 2.2rem;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
+  z-index: 1;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+.glyph.white { color: #fff; filter: drop-shadow(0 0 2px #000); }
+.glyph.black { color: #1a1a1a; filter: drop-shadow(0 0 2px rgba(255,255,255,0.3)); }
+
+.dot {
+  color: transparent;
+  pointer-events: none;
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────────────── */
+.sidebar {
+  flex: 1;
+  min-width: 240px;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.panel h2 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.5rem;
+}
+
+/* ── Rules ───────────────────────────────────────────────────────────────── */
+.rule-list {
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.rule-list strong { color: var(--text); }
+
+/* ── Piece tracker ───────────────────────────────────────────────────────── */
+.piece-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.piece-card {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  transition: opacity 0.2s;
+}
+.piece-card.used { opacity: 0.45; }
+.piece-card.active { border-color: var(--accent2); }
+
+.pc-glyph { font-size: 1.4rem; }
+
+.pc-info { flex: 1; }
+.pc-name { font-size: 0.85rem; font-weight: bold; }
+.pc-sub  { font-size: 0.72rem; color: var(--muted); }
+
+.pc-badge {
+  font-size: 0.65rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: var(--accent2);
+  color: #fff;
+  white-space: nowrap;
+}
+.pc-badge.done { background: var(--green); }
+
+/* ── Move history ────────────────────────────────────────────────────────── */
+.history-list {
+  list-style: decimal;
+  padding-left: 1.2rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.muted { font-size: 0.8rem; color: var(--muted); }
+
+/* ── Solution guide ──────────────────────────────────────────────────────── */
+.sol-step-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.sol-step-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+
+.sol-step-title {
+  font-size: 1rem;
+  font-weight: bold;
+  color: var(--accent);
+  margin: 0.2rem 0;
+}
+
+.sol-step-desc {
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin-top: 0.4rem;
+}
+
+.sol-nav {
+  display: flex;
+  gap: 0.5rem;
+}
+.sol-nav .btn { flex: 1; }
+
+.step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  transition: background 0.15s, color 0.15s;
+}
+.step-item:hover { background: var(--border); color: var(--text); }
+.step-item.active {
+  border-color: var(--accent);
+  color: var(--text);
+  background: rgba(245, 197, 24, 0.08);
+}
+
+.step-num {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  flex-shrink: 0;
+}
+.step-item.active .step-num {
+  background: var(--accent);
+  color: #111;
+}
+
+.step-item-title { flex: 1; }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .board-grid {
+    grid-template-columns: 1.2rem repeat(8, calc((100vw - 5rem) / 8));
+    grid-template-rows: 1.2rem repeat(8, calc((100vw - 5rem) / 8));
+  }
+  .glyph { font-size: 1.4rem; }
+  .sq-name { display: none; }
+  .sidebar { max-width: 100%; }
+}
+
+/* ── Lobby ───────────────────────────────────────────────────────────────── */
+.lobby {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+}
+
+.lobby-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 680px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.lobby-card h2 {
+  font-size: 1.3rem;
+  color: var(--accent);
+}
+
+.lobby-card h3 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+/* ── Piece count selector ─────────────────────────────────────────────────── */
+.count-selector {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.count-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  min-width: 72px;
+  font-family: var(--font-body);
+}
+.count-btn:hover { border-color: var(--accent2); color: var(--text); }
+.count-btn.active {
+  border-color: var(--accent);
+  background: rgba(245,197,24,0.08);
+  color: var(--text);
+}
+
+.count-num   { font-size: 1.6rem; font-weight: bold; color: var(--accent); line-height: 1; }
+.count-label { font-size: 0.7rem; color: var(--muted); }
+.count-avail { font-size: 0.65rem; color: var(--accent2); }
+
+.start-btn { width: 100%; padding: 0.75rem; font-size: 1rem; }
+
+/* ── Puzzle table ─────────────────────────────────────────────────────────── */
+.puzzle-table-wrap { overflow-x: auto; }
+
+.puzzle-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.puzzle-table th {
+  text-align: left;
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+}
+.puzzle-table td {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  color: var(--muted);
+  vertical-align: middle;
+}
+.puzzle-table tr:hover td { background: rgba(255,255,255,0.03); }
+.puzzle-table tr.highlighted-row td { color: var(--text); background: rgba(245,197,24,0.05); }
+
+.chain-preview { display: flex; gap: 2px; align-items: center; }
+.chain-glyph-sm { font-size: 1.1rem; opacity: 0.85; }
+
+.btn-sm { padding: 0.2rem 0.6rem; font-size: 0.75rem; }
+
+/* ── Chain summary in solution sidebar ───────────────────────────────────── */
+.chain-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.chain-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  padding: 0.25rem 0;
+}
+
+.chain-num {
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 50%;
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  flex-shrink: 0;
+  color: var(--text);
+}
+
+.chain-glyph { font-size: 1.1rem; }
+.chain-move  { flex: 1; font-family: var(--font-mono); font-size: 0.78rem; }
+.chain-arrow { color: var(--accent); font-size: 0.7rem; margin-left: auto; }
+
+/* ── Hint chip ────────────────────────────────────────────────────────────── */
+.status-chip.hint {
+  border-color: var(--accent2);
+  color: var(--accent2);
+}
+.status-chip.hint strong { color: var(--text); }
